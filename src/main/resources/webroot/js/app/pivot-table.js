@@ -7,20 +7,22 @@ function camelCaseToTitleCase(camelCase) {
 
 var HeaderRow = React.createClass({
    render: function() {
-       var headers = this.props.groupBys.split(',').map(gb => <th key={gb}>{camelCaseToTitleCase(gb)}</th>);
-       return (<thead><tr>{headers}</tr></thead>)
+       var groupByHeaders = this.props.groupBys.split(',').map(gb => <th key={gb}>{camelCaseToTitleCase(gb)}</th>);
+       var summaryHeaders = this.props.summaries.split(',').map(s => <th key={s}>{camelCaseToTitleCase(s)}</th>);
+       return (<thead><tr>{groupByHeaders}{summaryHeaders}</tr></thead>)
    }
 });
 
 var PivotTable = React.createClass({
     propTypes: {
-        groupBys: React.PropTypes.string.isRequired
+        groupBys: React.PropTypes.string.isRequired,
+        summaries: React.PropTypes.string.isRequired
     },
 
     render: function() {
         return (
-            <table className="table table-striped">
-                <HeaderRow groupBys={this.props.groupBys}/>
+            <table className="table table-striped small">
+                <HeaderRow groupBys={this.props.groupBys} summaries={this.props.summaries}/>
             </table>
         )
     }
