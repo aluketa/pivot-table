@@ -3,14 +3,12 @@
 var PivotDemo = React.createClass({
     render: function() {
         return (
-            <div>
-                Pivot table demo
-            </div>
+            <PivotTable groupBys="accountName,productName" foo="bar"/>
         );
     }
 });
 
 ReactDOM.render(
-    <PivotDemo />,
+    <PivotDemo/>,
     document.getElementById('demo')
 );
