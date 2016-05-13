@@ -10,6 +10,7 @@ import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import pivot.infrastructure.json.Json
+import pivot.service.DataService
 
 object ServerHandlerSupplier extends ConfiguredSupplier[Handler] {
   override def configure(source: ConfigurationSource): Handler = {
@@ -36,6 +37,8 @@ object ServerHandlerSupplier extends ConfiguredSupplier[Handler] {
     val resourceConfig = new ResourceConfig
     resourceConfig.register(classOf[JsonProvider])
     resourceConfig.register(classOf[JacksonFeature])
+
+    resourceConfig.register(new DataService, 0)
 
     handler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), path)
   }
