@@ -1,5 +1,14 @@
 'use strict';
 
+let dropdownStyle = {
+    display: 'inline-block',
+    marginRight: '10px'
+};
+
+let dropdownButtonStyle = {
+    backgroundImage: 'none'
+};
+
 function camelCaseToTitleCase(camelCase) {
     var result = camelCase.replace( /([A-Z])/g, " $1" );
     return result.charAt(0).toUpperCase() + result.slice(1);
@@ -63,7 +72,9 @@ var PivotTable = React.createClass({
     },
     getInitialState: function() {
         this.groupByArray = this.props.groupBys.split(',');
+        this.selectedGroupBys = this.groupByArray.slice();
         this.summaryArray = this.props.summaries.split(',');
+        this.selectedSummaries = this.summaryArray.slice();
         return {data: []};
     },
     componentDidMount: function() {
@@ -73,15 +84,78 @@ var PivotTable = React.createClass({
                 console.error('Failed to retrieve pivot table data from ' + this.props.dataUrl, status, error.toString())
             });
     },
+    toggleGroupBy: function(groupBy) {
+        if (this.selectedGroupBys.indexOf(groupBy) > -1) {
+            this.selectedGroupBys.splice(this.selectedGroupBys.indexOf(groupBy), 1);
+        } else {
+            this.selectedGroupBys.push(groupBy);
+        }
+        this.forceUpdate();
+    },
+    toggleSummary: function(summary) {
+        if (this.selectedSummaries.indexOf(summary) > -1) {
+            this.selectedSummaries.splice(this.selectedSummaries.indexOf(summary), 1);
+        } else {
+            this.selectedSummaries.push(summary);
+        }
+        this.forceUpdate();
+    },
     render: function() {
-        var pivotRows = pivotData(this.state.data, this.groupByArray, this.summaryArray);
+        var pivotRows = pivotData(this.state.data, this.selectedGroupBys, this.selectedSummaries);
         var groupRows = pivotRows.map(pr =>
-            <GroupRow groupBys={this.groupByArray} summaries={this.summaryArray} row={pr} key={pr.key}/>);
+            <GroupRow groupBys={this.selectedGroupBys} summaries={this.selectedSummaries} row={pr} key={pr.key}/>);
+        var groupByOptions = this.groupByArray.map(ga => {
+            var isSelected = this.selectedGroupBys.indexOf(ga) > -1;
+            return (<li key={ga}>
+                <a href="javascript:void(0)" onClick={() => this.toggleGroupBy(ga)}>
+                    {isSelected ? <span className="glyphicon glyphicon-ok"></span>: <span>&nbsp;&nbsp;&nbsp;</span>}
+                    &nbsp;&nbsp;{camelCaseToTitleCase(ga)}
+                </a>
+            </li>)});
+        var summaryOptions = this.summaryArray.map(s => {
+            var isSelected = this.selectedSummaries.indexOf(s) > -1;
+            return (<li key={s}>
+                <a href="javascript:void(0)" onClick={() => this.toggleSummary(s)}>
+                    {isSelected ? <span className="glyphicon glyphicon-ok"></span>: <span>&nbsp;&nbsp;&nbsp;</span>}
+                    &nbsp;&nbsp;{camelCaseToTitleCase(s)}
+                </a>
+            </li>)});
         return (
-            <table className="table table-striped small">
-                <HeaderRow groupBys={this.groupByArray} summaries={this.summaryArray}/>
-                <tbody>{groupRows}</tbody>
-            </table>
+            <div>
+                <div className="row">
+                    <div className="col-md-12">
+                        <div>
+                        <div className="dropdown" style={dropdownStyle}>
+                            <button className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" style={dropdownButtonStyle}>
+                                Group By &nbsp;
+                                <span className="caret"></span>
+                            </button>
+                            <ul className="dropdown-menu">
+                                {groupByOptions}
+                            </ul>
+                        </div>
+                        <div className="dropdown" style={dropdownStyle}>
+                            <button className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" style={dropdownButtonStyle}>
+                                Summaries &nbsp;
+                                <span className="caret"></span>
+                            </button>
+                            <ul className="dropdown-menu">
+                                {summaryOptions}
+                            </ul>
+                        </div>
+                            </div>
+                        <hr style={{marginTop: '15px', marginBottom: '10px'}}/>
+                    </div>
+                </div>
+                <div className="row">
+                    <div className="col-md-12">
+                        <table className="table table-striped small">
+                            <HeaderRow groupBys={this.selectedGroupBys} summaries={this.selectedSummaries}/>
+                            <tbody>{groupRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         )
     }
 });
