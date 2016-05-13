@@ -26,7 +26,7 @@ function pivotData(data, groupBys, summaries) {
             {rawData: group, key: key},
             _.extend(
                 _.object(groupBys, groupBys.map(gb => group[0][gb])),
-                _.object(summaries, summaries.map(s => 0))));
+                _.object(summaries, summaries.map(s => _.reduce(_.pluck(group, s), function(a, b) {return a + b})))));
     }
     var groups = _.values(_.groupBy(data, function(d) { return _.map(groupBys, function(gb) { return d[gb] }) }));
     var key = 0;
