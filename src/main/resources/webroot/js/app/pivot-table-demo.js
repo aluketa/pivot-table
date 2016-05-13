@@ -3,7 +3,7 @@
 var PivotDemo = React.createClass({
     render: function() {
         return (
-            <PivotTable groupBys="accountName,productName" summaries="quantity,marketValue"/>
+            <PivotTable groupBys="accountName,productName" summaries="quantity,marketValue" dataUrl="/rest/data"/>
         );
     }
 });
