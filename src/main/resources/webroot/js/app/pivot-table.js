@@ -10,12 +10,8 @@ function getDataFromUrl(url) {
         $.ajax({
             url: url,
             dataType: 'json',
-            success: function(data) {
-                resolve(data);
-            },
-            error: function(xhr, status, error) {
-                reject(xhr, status, error);
-            }
+            success: (data => resolve(data)),
+            error: ((xhr, status, error) =>  reject(xhr, status, error))
         });
     });
 }
@@ -26,26 +22,35 @@ function pivotData(data, groupBys, summaries) {
             {rawData: group, key: key},
             _.extend(
                 _.object(groupBys, groupBys.map(gb => group[0][gb])),
-                _.object(summaries, summaries.map(s => _.reduce(_.pluck(group, s), function(a, b) {return a + b})))));
+                _.object(summaries, summaries.map(s => _.reduce(_.pluck(group, s), (a, b) => a + b)))));
     }
-    var groups = _.values(_.groupBy(data, function(d) { return _.map(groupBys, function(gb) { return d[gb] }) }));
+    var groups = _.values(_.groupBy(data, d => _.map(groupBys, gb => d[gb] )));
     var key = 0;
     return groups.map(g => groupToRow(g, key++));
 }
 
 var HeaderRow = React.createClass({
-   render: function() {
-       var groupByHeaders = this.props.groupBys.split(',').map(gb => <th key={gb}>{camelCaseToTitleCase(gb)}</th>);
-       var summaryHeaders = this.props.summaries.split(',').map(s => <th key={s}>{camelCaseToTitleCase(s)}</th>);
+    propTypes: {
+        groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+    },
+    render: function() {
+       var groupByHeaders = this.props.groupBys.map(gb => <th key={gb}>{camelCaseToTitleCase(gb)}</th>);
+       var summaryHeaders = this.props.summaries.map(s => <th key={s}>{camelCaseToTitleCase(s)}</th>);
        return (<thead><tr>{groupByHeaders}{summaryHeaders}</tr></thead>)
    }
 });
 
 var GroupRow = React.createClass({
+    propTypes: {
+        groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        row: React.PropTypes.object
+    },
     render: function() {
         var cellKey = 0;
-        var groupValues = this.props.groupBys.split(',').map(gb => <td key={cellKey++}>{this.props.row[gb]}</td>);
-        var summaryValues = this.props.summaries.split(',').map(s => <td key={cellKey++}>{this.props.row[s]}</td>);
+        var groupValues = this.props.groupBys.map(gb => <td key={cellKey++}>{this.props.row[gb]}</td>);
+        var summaryValues = this.props.summaries.map(s => <td key={cellKey++}>{this.props.row[s]}</td>);
         return (<tr>{groupValues}{summaryValues}</tr>)
     }
 });
@@ -57,6 +62,8 @@ var PivotTable = React.createClass({
         dataUrl: React.PropTypes.string.isRequired
     },
     getInitialState: function() {
+        this.groupByArray = this.props.groupBys.split(',');
+        this.summaryArray = this.props.summaries.split(',');
         return {data: []};
     },
     componentDidMount: function() {
@@ -67,11 +74,12 @@ var PivotTable = React.createClass({
             });
     },
     render: function() {
-        var pivotRows = pivotData(this.state.data, this.props.groupBys.split(','), this.props.summaries.split(','));
-        var groupRows = pivotRows.map(pr => <GroupRow groupBys={this.props.groupBys} summaries={this.props.summaries} row={pr} key={pr.key}/>);
+        var pivotRows = pivotData(this.state.data, this.groupByArray, this.summaryArray);
+        var groupRows = pivotRows.map(pr =>
+            <GroupRow groupBys={this.groupByArray} summaries={this.summaryArray} row={pr} key={pr.key}/>);
         return (
             <table className="table table-striped small">
-                <HeaderRow groupBys={this.props.groupBys} summaries={this.props.summaries}/>
+                <HeaderRow groupBys={this.groupByArray} summaries={this.summaryArray}/>
                 <tbody>{groupRows}</tbody>
             </table>
         )
