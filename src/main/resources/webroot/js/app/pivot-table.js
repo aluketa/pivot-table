@@ -109,16 +109,16 @@ var DropdownSelection = React.createClass({
 
 var PivotTable = React.createClass({
     propTypes: {
-        groupBys: React.PropTypes.string.isRequired,
-        summaries: React.PropTypes.string.isRequired,
+        groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         dataUrl: React.PropTypes.string.isRequired
     },
     getInitialState: function() {
-        this.groupByArray = this.props.groupBys.split(',');
-        this.selectedGroupBys = this.groupByArray.slice();
-        this.summaryArray = this.props.summaries.split(',');
-        this.selectedSummaries = this.summaryArray.slice();
-        return {data: []};
+        return {
+            selectedGroupBys: this.props.groupBys.slice(),
+            selectedSummaries: this.props.summaries.slice(),
+            data: []
+        };
     },
     componentDidMount: function() {
         getDataFromUrl(this.props.dataUrl)
@@ -128,30 +128,28 @@ var PivotTable = React.createClass({
             });
     },
     groupBysUpdated: function(selectedGroupBys) {
-        this.selectedGroupBys = selectedGroupBys;
-        this.forceUpdate();
+        this.setState({selectedGroupBys: selectedGroupBys});
     },
     summariesUpdated: function(selectedSummaries) {
-        this.selectedSummaries = selectedSummaries;
-        this.forceUpdate();
+        this.setState({selectedSummaries: selectedSummaries});
     },
     render: function() {
-        var pivotRows = pivotData(this.state.data, this.selectedGroupBys, this.selectedSummaries);
+        var pivotRows = pivotData(this.state.data, this.state.selectedGroupBys, this.state.selectedSummaries);
         var groupRows = pivotRows.map(pr =>
-            <GroupRow groupBys={this.selectedGroupBys} summaries={this.selectedSummaries} row={pr} key={pr.key}/>);
+            <GroupRow groupBys={this.state.selectedGroupBys} summaries={this.state.selectedSummaries} row={pr} key={pr.key}/>);
         return (
             <div>
                 <div className="row">
                     <div className="col-md-12">
-                        <DropdownSelection title="Group By" options={this.groupByArray} onChange={this.groupBysUpdated}/>
-                        <DropdownSelection title="Summaries" options={this.summaryArray} onChange={this.summariesUpdated}/>
+                        <DropdownSelection title="Group By" options={this.props.groupBys} onChange={this.groupBysUpdated}/>
+                        <DropdownSelection title="Summaries" options={this.props.summaries} onChange={this.summariesUpdated}/>
                         <hr style={{marginTop: '15px', marginBottom: '10px'}}/>
                     </div>
                 </div>
                 <div className="row">
                     <div className="col-md-12">
                         <table className="table table-striped small">
-                            <HeaderRow groupBys={this.selectedGroupBys} summaries={this.selectedSummaries}/>
+                            <HeaderRow groupBys={this.state.selectedGroupBys} summaries={this.state.selectedSummaries}/>
                             <tbody>{groupRows}</tbody>
                         </table>
                     </div>
