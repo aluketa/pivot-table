@@ -132,7 +132,8 @@ var PivotTable = React.createClass({
     propTypes: {
         groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-        dataUrl: React.PropTypes.string.isRequired
+        dataUrl: React.PropTypes.string,
+        data: React.PropTypes.arrayOf(React.PropTypes.object)
     },
     getInitialState: function() {
         return {
@@ -140,7 +141,7 @@ var PivotTable = React.createClass({
             selectedSummaries: this.props.summaries.slice(),
             sortColumn: this.props.groupBys[0] ? this.props.groupBys[0] : this.props.summaries[0] ? this.props.summaries[0] : undefined,
             sortAscending: true,
-            data: []
+            data: this.props.data || []
         };
     },
     componentWillReceiveProps: function(nextProps) {
@@ -149,11 +150,13 @@ var PivotTable = React.createClass({
         });
     },
     componentDidMount: function() {
-        getDataFromUrl(this.props.dataUrl)
-            .then(data => this.setState({data: data}))
-            .catch((xhr, status, error) => {
-                console.error('Failed to retrieve pivot table data from ' + this.props.dataUrl, status, error.toString())
-            });
+        if (this.props.dataUrl) {
+            getDataFromUrl(this.props.dataUrl)
+                .then(data => this.setState({data: data}))
+                .catch((xhr, status, error) => {
+                    console.error('Failed to retrieve pivot table data from ' + this.props.dataUrl, status, error.toString())
+                });
+        }
     },
     groupBysUpdated: function(selectedGroupBys) {
         this.setState({selectedGroupBys: selectedGroupBys});
