@@ -133,7 +133,8 @@ var PivotTable = React.createClass({
         groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         dataUrl: React.PropTypes.string,
-        data: React.PropTypes.arrayOf(React.PropTypes.object)
+        data: React.PropTypes.arrayOf(React.PropTypes.object),
+        hideControls: React.PropTypes.bool
     },
     getInitialState: function() {
         return {
@@ -171,15 +172,18 @@ var PivotTable = React.createClass({
         var pivotRows = pivotData(this.state.data, this.state.selectedGroupBys, this.state.selectedSummaries, this.state.sortColumn, this.state.sortAscending);
         var groupRows = pivotRows.map(pr =>
             <GroupRow groupBys={this.state.selectedGroupBys} summaries={this.state.selectedSummaries} row={pr} key={pr.key}/>);
+        var controls = (
+            <div className="row">
+                <div className="col-md-12">
+                    <DropdownSelection title="Group By" options={this.props.groupBys} onChange={this.groupBysUpdated}/>
+                    <DropdownSelection title="Summaries" options={this.props.summaries} onChange={this.summariesUpdated}/>
+                    <hr style={{marginTop: '15px', marginBottom: '10px'}}/>
+                </div>
+            </div>
+        );
         return (
             <div>
-                <div className="row">
-                    <div className="col-md-12">
-                        <DropdownSelection title="Group By" options={this.props.groupBys} onChange={this.groupBysUpdated}/>
-                        <DropdownSelection title="Summaries" options={this.props.summaries} onChange={this.summariesUpdated}/>
-                        <hr style={{marginTop: '15px', marginBottom: '10px'}}/>
-                    </div>
-                </div>
+                {this.props.hideControls ? <span></span> : controls}
                 <div className="row">
                     <div className="col-md-12">
                         <table className="table table-striped small">
