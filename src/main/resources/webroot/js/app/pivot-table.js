@@ -13,6 +13,11 @@ var clickableStyle = {
     cursor: 'pointer'
 };
 
+var drillDownControlStyle = {
+    cursor: 'pointer',
+    width: '20px'
+};
+
 function camelCaseToTitleCase(camelCase) {
     var result = camelCase.replace( /([A-Z])/g, " $1" );
     return result.charAt(0).toUpperCase() + result.slice(1);
@@ -67,21 +72,52 @@ var HeaderRow = React.createClass({
                 {camelCaseToTitleCase(s)}
                 {this.props.sortColumn == s ? <span className={sortClass}></span> : <span></span>}
             </th>);
-       return (<thead><tr>{groupByHeaders}{summaryHeaders}</tr></thead>)
+       return (<thead><tr><th style={{width: '20px'}}></th>{groupByHeaders}{summaryHeaders}</tr></thead>)
    }
 });
 
 var GroupRow = React.createClass({
     propTypes: {
+        selectedGroupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        selectedSummaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         row: React.PropTypes.object.isRequired
     },
+    getInitialState: function() {
+        return {
+            showDrillDown: false
+        }
+    },
+    toggleDrillDown: function() {
+        var showDrillDown = ! this.state.showDrillDown;
+        this.setState({showDrillDown: showDrillDown});
+    },
     render: function() {
         var cellKey = 0;
-        var groupValues = this.props.groupBys.map(gb => <td key={cellKey++}>{this.props.row[gb]}</td>);
-        var summaryValues = this.props.summaries.map(s => <td key={cellKey++}>{this.props.row[s]}</td>);
-        return (<tr>{groupValues}{summaryValues}</tr>)
+        var groupValues = this.props.selectedGroupBys.map(gb => <td key={cellKey++}>{this.props.row[gb]}</td>);
+        var summaryValues = this.props.selectedSummaries.map(s => <td key={cellKey++}>{this.props.row[s]}</td>);
+        var drillDownClassName = this.state.showDrillDown ? 'glyphicon glyphicon-minus' : 'glyphicon glyphicon-plus';
+        var drillDownControl =
+            this.props.row.rawData.length > 1
+                ? <td style={drillDownControlStyle} onClick={this.toggleDrillDown}><span className={drillDownClassName}></span></td>
+                : <td></td>;
+        var drillDownColSpan = this.props.groupBys.length + this.props.summaries.length + 1;
+        var drillDownRow = (
+            <tr>
+                <td colSpan={drillDownColSpan}>
+                    <PivotTable groupBys={this.props.groupBys}
+                                summaries={this.props.summaries}
+                                data={this.props.row.rawData}
+                                hideControls={true}/>
+                </td>
+            </tr>
+        );
+        return (
+            <tbody>
+                <tr>{drillDownControl}{groupValues}{summaryValues}</tr>
+                {this.state.showDrillDown ? drillDownRow : null}
+            </tbody>);
     }
 });
 
@@ -171,7 +207,12 @@ var PivotTable = React.createClass({
     render: function() {
         var pivotRows = pivotData(this.state.data, this.state.selectedGroupBys, this.state.selectedSummaries, this.state.sortColumn, this.state.sortAscending);
         var groupRows = pivotRows.map(pr =>
-            <GroupRow groupBys={this.state.selectedGroupBys} summaries={this.state.selectedSummaries} row={pr} key={pr.key}/>);
+            <GroupRow selectedGroupBys={this.state.selectedGroupBys}
+                      selectedSummaries={this.state.selectedSummaries}
+                      groupBys={this.props.groupBys}
+                      summaries={this.props.summaries}
+                      row={pr}
+                      key={pr.key}/>);
         var controls = (
             <div className="row">
                 <div className="col-md-12">
@@ -186,13 +227,13 @@ var PivotTable = React.createClass({
                 {this.props.hideControls ? <span></span> : controls}
                 <div className="row">
                     <div className="col-md-12">
-                        <table className="table table-striped small">
+                        <table className="table small">
                             <HeaderRow groupBys={this.state.selectedGroupBys}
                                        summaries={this.state.selectedSummaries}
                                        sortColumn={this.state.sortColumn}
                                        sortAscending={this.state.sortAscending}
                                        onChange={this.headerRowUpdated}/>
-                            <tbody>{groupRows}</tbody>
+                            {groupRows}
                         </table>
                     </div>
                 </div>
