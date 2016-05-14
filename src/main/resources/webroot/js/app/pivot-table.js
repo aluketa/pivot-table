@@ -9,6 +9,10 @@ var dropdownButtonStyle = {
     backgroundImage: 'none'
 };
 
+var clickableStyle = {
+    cursor: 'pointer'
+};
+
 function camelCaseToTitleCase(camelCase) {
     var result = camelCase.replace( /([A-Z])/g, " $1" );
     return result.charAt(0).toUpperCase() + result.slice(1);
@@ -25,7 +29,7 @@ function getDataFromUrl(url) {
     });
 }
 
-function pivotData(data, groupBys, summaries) {
+function pivotData(data, groupBys, summaries, sortColumn, sortAscending) {
     function groupToRow(group, key) {
         return _.extend(
             {rawData: group, key: key},
@@ -35,17 +39,34 @@ function pivotData(data, groupBys, summaries) {
     }
     var groups = _.values(_.groupBy(data, d => _.map(groupBys, gb => d[gb] )));
     var key = 0;
-    return groups.map(g => groupToRow(g, key++));
+    var sortedResults = _.sortBy(groups.map(g => groupToRow(g, key++)), r => r[sortColumn]);
+    return sortAscending ? sortedResults : sortedResults.reverse();
 }
 
 var HeaderRow = React.createClass({
     propTypes: {
         groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-        summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+        summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        sortColumn: React.PropTypes.string.isRequired,
+        sortAscending: React.PropTypes.bool.isRequired,
+        onChange: React.PropTypes.func
+    },
+    updateSort: function(sortColumn) {
+        var newSortAscending = this.props.sortColumn == sortColumn ? !this.props.sortAscending : true;
+        this.props.onChange(sortColumn, newSortAscending);
     },
     render: function() {
-       var groupByHeaders = this.props.groupBys.map(gb => <th key={gb}>{camelCaseToTitleCase(gb)}</th>);
-       var summaryHeaders = this.props.summaries.map(s => <th key={s}>{camelCaseToTitleCase(s)}</th>);
+        var sortClass = this.props.sortAscending ? 'glyphicon glyphicon-arrow-up' : 'glyphicon glyphicon-arrow-down';
+        var groupByHeaders = this.props.groupBys.map(gb =>
+            <th key={gb} style={clickableStyle} onClick={() => this.updateSort(gb)}>
+                {camelCaseToTitleCase(gb)}
+                {this.props.sortColumn == gb ? <span className={sortClass}></span> : <span></span>}
+            </th>);
+        var summaryHeaders = this.props.summaries.map(s =>
+            <th key={s} style={clickableStyle} onClick={() => this.updateSort(s)}>
+                {camelCaseToTitleCase(s)}
+                {this.props.sortColumn == s ? <span className={sortClass}></span> : <span></span>}
+            </th>);
        return (<thead><tr>{groupByHeaders}{summaryHeaders}</tr></thead>)
    }
 });
@@ -117,8 +138,15 @@ var PivotTable = React.createClass({
         return {
             selectedGroupBys: this.props.groupBys.slice(),
             selectedSummaries: this.props.summaries.slice(),
+            sortColumn: this.props.groupBys[0] ? this.props.groupBys[0] : this.props.summaries[0] ? this.props.summaries[0] : undefined,
+            sortAscending: true,
             data: []
         };
+    },
+    componentWillReceiveProps: function(nextProps) {
+        this.setState({
+            sortColumn: nextProps.groupBys[0] ? nextProps.groupBys[0] : nextProps.summaries[0] ? nextProps.summaries[0] : undefined
+        });
     },
     componentDidMount: function() {
         getDataFromUrl(this.props.dataUrl)
@@ -133,8 +161,11 @@ var PivotTable = React.createClass({
     summariesUpdated: function(selectedSummaries) {
         this.setState({selectedSummaries: selectedSummaries});
     },
+    headerRowUpdated: function(sortColumn, sortAscending) {
+        this.setState({sortColumn: sortColumn, sortAscending: sortAscending});
+    },
     render: function() {
-        var pivotRows = pivotData(this.state.data, this.state.selectedGroupBys, this.state.selectedSummaries);
+        var pivotRows = pivotData(this.state.data, this.state.selectedGroupBys, this.state.selectedSummaries, this.state.sortColumn, this.state.sortAscending);
         var groupRows = pivotRows.map(pr =>
             <GroupRow groupBys={this.state.selectedGroupBys} summaries={this.state.selectedSummaries} row={pr} key={pr.key}/>);
         return (
@@ -149,7 +180,11 @@ var PivotTable = React.createClass({
                 <div className="row">
                     <div className="col-md-12">
                         <table className="table table-striped small">
-                            <HeaderRow groupBys={this.state.selectedGroupBys} summaries={this.state.selectedSummaries}/>
+                            <HeaderRow groupBys={this.state.selectedGroupBys}
+                                       summaries={this.state.selectedSummaries}
+                                       sortColumn={this.state.sortColumn}
+                                       sortAscending={this.state.sortAscending}
+                                       onChange={this.headerRowUpdated}/>
                             <tbody>{groupRows}</tbody>
                         </table>
                     </div>
