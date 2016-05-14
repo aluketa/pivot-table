@@ -1,11 +1,11 @@
 'use strict';
 
-let dropdownStyle = {
+var dropdownStyle = {
     display: 'inline-block',
     marginRight: '10px'
 };
 
-let dropdownButtonStyle = {
+var dropdownButtonStyle = {
     backgroundImage: 'none'
 };
 
@@ -54,13 +54,56 @@ var GroupRow = React.createClass({
     propTypes: {
         groupBys: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         summaries: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-        row: React.PropTypes.object
+        row: React.PropTypes.object.isRequired
     },
     render: function() {
         var cellKey = 0;
         var groupValues = this.props.groupBys.map(gb => <td key={cellKey++}>{this.props.row[gb]}</td>);
         var summaryValues = this.props.summaries.map(s => <td key={cellKey++}>{this.props.row[s]}</td>);
         return (<tr>{groupValues}{summaryValues}</tr>)
+    }
+});
+
+var DropdownSelection = React.createClass({
+    propTypes: {
+        title: React.PropTypes.string.isRequired,
+        options: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+        onChange: React.PropTypes.func
+    },
+    getInitialState: function() {
+        return {
+            selectedOptions: this.props.options.slice()
+        }
+    },
+    toggleOption: function(option) {
+        var selectedOptions = this.state.selectedOptions.slice();
+        if (selectedOptions.indexOf(option) > -1) {
+            selectedOptions.splice(selectedOptions.indexOf(option), 1)
+        } else {
+            selectedOptions.push(option);
+        }
+        this.setState({selectedOptions: selectedOptions});
+        this.props.onChange(selectedOptions);
+    },
+    render: function() {
+        var optionElements = this.props.options.map(option => {
+            var isSelected = this.state.selectedOptions.indexOf(option) > -1;
+            return (<li key={option}>
+                <a href="javascript:void(0)" onClick={() => this.toggleOption(option)}>
+                    {isSelected ? <span className="glyphicon glyphicon-ok"></span>: <span>&nbsp;&nbsp;&nbsp;</span>}
+                    &nbsp;&nbsp;{camelCaseToTitleCase(option)}
+                </a>
+            </li>)});
+
+        return (<div className="dropdown" style={dropdownStyle}>
+            <button className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" style={dropdownButtonStyle}>
+                {this.props.title}&nbsp;
+                <span className="caret"></span>
+            </button>
+            <ul className="dropdown-menu">
+                {optionElements}
+            </ul>
+        </div>);
     }
 });
 
@@ -84,66 +127,24 @@ var PivotTable = React.createClass({
                 console.error('Failed to retrieve pivot table data from ' + this.props.dataUrl, status, error.toString())
             });
     },
-    toggleGroupBy: function(groupBy) {
-        if (this.selectedGroupBys.indexOf(groupBy) > -1) {
-            this.selectedGroupBys.splice(this.selectedGroupBys.indexOf(groupBy), 1);
-        } else {
-            this.selectedGroupBys.push(groupBy);
-        }
+    groupBysUpdated: function(selectedGroupBys) {
+        this.selectedGroupBys = selectedGroupBys;
         this.forceUpdate();
     },
-    toggleSummary: function(summary) {
-        if (this.selectedSummaries.indexOf(summary) > -1) {
-            this.selectedSummaries.splice(this.selectedSummaries.indexOf(summary), 1);
-        } else {
-            this.selectedSummaries.push(summary);
-        }
+    summariesUpdated: function(selectedSummaries) {
+        this.selectedSummaries = selectedSummaries;
         this.forceUpdate();
     },
     render: function() {
         var pivotRows = pivotData(this.state.data, this.selectedGroupBys, this.selectedSummaries);
         var groupRows = pivotRows.map(pr =>
             <GroupRow groupBys={this.selectedGroupBys} summaries={this.selectedSummaries} row={pr} key={pr.key}/>);
-        var groupByOptions = this.groupByArray.map(ga => {
-            var isSelected = this.selectedGroupBys.indexOf(ga) > -1;
-            return (<li key={ga}>
-                <a href="javascript:void(0)" onClick={() => this.toggleGroupBy(ga)}>
-                    {isSelected ? <span className="glyphicon glyphicon-ok"></span>: <span>&nbsp;&nbsp;&nbsp;</span>}
-                    &nbsp;&nbsp;{camelCaseToTitleCase(ga)}
-                </a>
-            </li>)});
-        var summaryOptions = this.summaryArray.map(s => {
-            var isSelected = this.selectedSummaries.indexOf(s) > -1;
-            return (<li key={s}>
-                <a href="javascript:void(0)" onClick={() => this.toggleSummary(s)}>
-                    {isSelected ? <span className="glyphicon glyphicon-ok"></span>: <span>&nbsp;&nbsp;&nbsp;</span>}
-                    &nbsp;&nbsp;{camelCaseToTitleCase(s)}
-                </a>
-            </li>)});
         return (
             <div>
                 <div className="row">
                     <div className="col-md-12">
-                        <div>
-                        <div className="dropdown" style={dropdownStyle}>
-                            <button className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" style={dropdownButtonStyle}>
-                                Group By &nbsp;
-                                <span className="caret"></span>
-                            </button>
-                            <ul className="dropdown-menu">
-                                {groupByOptions}
-                            </ul>
-                        </div>
-                        <div className="dropdown" style={dropdownStyle}>
-                            <button className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" style={dropdownButtonStyle}>
-                                Summaries &nbsp;
-                                <span className="caret"></span>
-                            </button>
-                            <ul className="dropdown-menu">
-                                {summaryOptions}
-                            </ul>
-                        </div>
-                            </div>
+                        <DropdownSelection title="Group By" options={this.groupByArray} onChange={this.groupBysUpdated}/>
+                        <DropdownSelection title="Summaries" options={this.summaryArray} onChange={this.summariesUpdated}/>
                         <hr style={{marginTop: '15px', marginBottom: '10px'}}/>
                     </div>
                 </div>
