@@ -1,5 +1,9 @@
 'use strict';
 
+import React from 'react';
+import {_} from 'underscore';
+import $ from 'jquery';
+
 var dropdownStyle = {
     display: 'inline-block',
     marginRight: '10px'
@@ -242,4 +246,4 @@ var PivotTable = React.createClass({
     }
 });
 
-window.PivotTable = PivotTable;
+export default PivotTable;

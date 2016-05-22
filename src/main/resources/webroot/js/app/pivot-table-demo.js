@@ -1,5 +1,9 @@
 'use strict';
 
+import React from 'react';
+import ReactDOM from 'react-dom';
+import PivotTable from './pivot-table.js'
+
 /*var testData = [
     {
         accountName: 'Account 7',
